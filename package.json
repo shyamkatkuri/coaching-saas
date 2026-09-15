@@ -3,15 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "client/*",
+    "server/*",
     "packages/*"
   ],
   "scripts": {
-    "start:web": "npm run start --workspace=@coaching/web-shell",
-    "start:tenant-mfe": "npm run start --workspace=@coaching/tenant-mfe",
-    "start:tenant": "npm run start:dev --workspace=@coaching/tenant-service",
+    "start:web": "npm run start --workspace=@coaching/angular-shell",
+    "start:tenant-mfe": "npm run start --workspace=@coaching/mfe-tenant",
+    "start:tenant": "npm run start:dev --workspace=@coaching/core-api",
     "start:gateway": "npm run start:dev --workspace=@coaching/api-gateway",
-    "start:public-web": "npm run dev --workspace=@coaching/public-web",
+    "start:public-web": "npm run dev --workspace=@coaching/next-public",
     "start:all": "concurrently \"npm run start:web\" \"npm run start:tenant-mfe\" \"npm run start:tenant\" \"npm run start:gateway\" \"npm run start:public-web\""
   },
   "devDependencies": {
