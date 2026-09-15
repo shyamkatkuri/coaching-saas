@@ -1,0 +1,25 @@
+{
+  "name": "coaching-saas",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start:web": "npm run start --workspace=@coaching/web-shell",
+    "start:tenant-mfe": "npm run start --workspace=@coaching/tenant-mfe",
+    "start:tenant": "npm run start:dev --workspace=@coaching/tenant-service",
+    "start:gateway": "npm run start:dev --workspace=@coaching/api-gateway",
+    "start:public-web": "npm run dev --workspace=@coaching/public-web",
+    "start:all": "concurrently \"npm run start:web\" \"npm run start:tenant-mfe\" \"npm run start:tenant\" \"npm run start:gateway\" \"npm run start:public-web\""
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "concurrently": "^10.0.5"
+  },
+  "dependencies": {
+    "@nestjs/config": "^4.0.4",
+    "pg": "^8.23.0"
+  }
+}
