@@ -45,12 +45,22 @@ import { CorrelationIdMiddleware } from './app/core/http/correlation-id.middlewa
 
         DB_PASSWORD: Joi.string()
           .required(),
+
+        USER_DB_NAME: Joi.string()
+          .required(),
+
+        KEYCLOAK_ISSUER: Joi.string()
+          .uri()
+          .required(),
+
+        KEYCLOAK_AUDIENCE: Joi.string()
+          .required(),
       }),
     }),
     CoreModule,
     DatabaseModule,
     HealthModule,
-    TenantModule  ],
+    TenantModule],
   controllers: [],
   providers: []
 })

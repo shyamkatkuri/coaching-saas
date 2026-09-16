@@ -75,12 +75,54 @@ export class DatabaseRegistryService
             tenantPool,
         );
 
-        await tenantPool.query(
-            'SELECT 1',
+        const userPool =
+            new Pool({
+                host:
+                    this.config.getOrThrow<string>(
+                        'DB_HOST',
+                    ),
+
+                port:
+                    this.config.get<number>(
+                        'DB_PORT',
+                    ) ?? 5432,
+
+                database:
+                    this.config.getOrThrow<string>(
+                        'USER_DB_NAME',
+                    ),
+
+                user:
+                    this.config.getOrThrow<string>(
+                        'DB_USER',
+                    ),
+
+                password:
+                    this.config.getOrThrow<string>(
+                        'DB_PASSWORD',
+                    ),
+
+                max: 10,
+
+                idleTimeoutMillis:
+                    30_000,
+
+                connectionTimeoutMillis:
+                    5_000,
+            });
+
+        this.pools.set(
+            DATABASES.USER,
+            userPool,
         );
 
+        await Promise.all([
+            tenantPool.query('SELECT 1'),
+            userPool.query('SELECT 1'),
+        ]);
+
         this.logger.log(
-            'Connected to tenant database',
+            'Connected to tenant_db and user_db',
             DatabaseRegistryService.name,
         );
     }

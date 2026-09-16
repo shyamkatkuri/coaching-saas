@@ -1,6 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { DatabaseService } from '../core/database/database.service';
+import {
+    Public,
+} from '../core/security/authentication/public.decorator';
 
+@Public()
 @Controller('health')
 export class HealthController {
     constructor(

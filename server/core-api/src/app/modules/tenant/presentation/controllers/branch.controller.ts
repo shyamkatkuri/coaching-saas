@@ -10,6 +10,7 @@ import {
 import { BranchApplicationService } from '../../application/branch-application.service';
 import { CreateBranchDto } from '../dto/create-branch.dto';
 import { UpdateBranchDto } from '../dto/update-branch.dto';
+import { RequireAccess } from 'src/app/core/security/authorization/require-access.decorator';
 
 @Controller('tenants/:organizationId/branches')
 export class BranchController {
@@ -18,6 +19,13 @@ export class BranchController {
             BranchApplicationService,
     ) { }
 
+    @RequireAccess({
+        scope: 'TENANT',
+
+        permissions: [
+            'branch:read',
+        ],
+    })
     @Get()
     findAll(
         @Param(
@@ -31,6 +39,13 @@ export class BranchController {
         );
     }
 
+    @RequireAccess({
+        scope: 'BRANCH',
+
+        permissions: [
+            'branch:read',
+        ],
+    })
     @Get(':branchId')
     findById(
         @Param(
@@ -51,6 +66,13 @@ export class BranchController {
         );
     }
 
+    @RequireAccess({
+        scope: 'TENANT',
+
+        permissions: [
+            'branch:create',
+        ],
+    })
     @Post()
     create(
         @Param(
@@ -68,6 +90,13 @@ export class BranchController {
         );
     }
 
+    @RequireAccess({
+        scope: 'BRANCH',
+
+        permissions: [
+            'branch:update',
+        ],
+    })
     @Patch(':branchId')
     update(
         @Param(

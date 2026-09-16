@@ -16,7 +16,9 @@ import {
 import { TenantApplicationService } from '../../application/tenant-application.service';
 import { UpdateTenantDto } from '../dto/update-tenant.dto';
 
-
+import {
+    RequireAccess,
+} from '../../../../core/security/authorization/require-access.decorator';
 
 @Controller('tenants')
 export class TenantController {
@@ -25,11 +27,27 @@ export class TenantController {
             TenantApplicationService,
     ) { }
 
+    @RequireAccess({
+        scope: 'PLATFORM',
+
+        permissions: [
+            'tenant:read',
+        ],
+    })
     @Get()
     findAll() {
         return this.service.findAll();
     }
 
+    @RequireAccess({
+        scope: 'TENANT',
+
+        tenantParam: 'id',
+
+        permissions: [
+            'tenant:read',
+        ],
+    })
     @Get(':id')
     findById(
         @Param(
@@ -41,6 +59,12 @@ export class TenantController {
         return this.service.findById(id);
     }
 
+    @RequireAccess({
+        scope: 'PLATFORM',
+        permissions: [
+            'tenant:create',
+        ],
+    })
     @Post()
     create(
         @Body()
@@ -49,6 +73,15 @@ export class TenantController {
         return this.service.create(dto);
     }
 
+    @RequireAccess({
+        scope: 'TENANT',
+
+        tenantParam: 'id',
+
+        permissions: [
+            'tenant:update',
+        ],
+    })
     @Patch(':id')
     update(
         @Param(

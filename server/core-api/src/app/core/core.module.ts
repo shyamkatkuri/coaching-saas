@@ -26,11 +26,13 @@ import {
 import {
     GlobalExceptionFilter,
 } from './errors/global-exception.filter';
+import { SecurityModule } from './security/security.module';
 
 @Global()
 @Module({
     imports: [
         DatabaseModule,
+        SecurityModule
     ],
 
     providers: [

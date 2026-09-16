@@ -14,6 +14,7 @@ import {
 import {
     UpsertTenantSettingsDto,
 } from '../dto/upsert-tenant-settings.dto';
+import { RequireAccess } from 'src/app/core/security/authorization/require-access.decorator';
 
 @Controller('tenants/:organizationId/settings')
 export class TenantSettingsController {
@@ -22,6 +23,14 @@ export class TenantSettingsController {
             TenantSettingsApplicationService,
     ) { }
 
+
+    @RequireAccess({
+        scope: 'TENANT',
+
+        permissions: [
+            'tenant:read',
+        ],
+    })
     @Get()
     findByOrganizationId(
         @Param(
@@ -35,6 +44,13 @@ export class TenantSettingsController {
         );
     }
 
+    @RequireAccess({
+        scope: 'TENANT',
+
+        permissions: [
+            'tenant:update',
+        ],
+    })
     @Put()
     upsert(
         @Param(
