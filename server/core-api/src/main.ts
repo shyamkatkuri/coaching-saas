@@ -52,6 +52,29 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  app.enableCors({
+    origin: [
+      'http://localhost:4200',
+      'http://localhost:4201',
+      'http://localhost:4202',
+    ],
+
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS',
+    ],
+
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Correlation-Id',
+    ],
+  });
+
   const config =
     app.get(
       ConfigService,

@@ -1,12 +1,34 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import {
+  Component,
+  inject,
+} from '@angular/core';
 
+import {
+  RouterOutlet,
+} from '@angular/router';
+
+import {
+  AuthService,
+} from './core/auth/auth.service';
 @Component({
-  imports: [RouterOutlet],
-  selector: 'app-root',
-  styleUrl: './app.css',
-  templateUrl: './app.html',
+  selector:
+    'app-root',
+
+  standalone:
+    true,
+
+  imports: [
+    RouterOutlet,
+  ],
+
+  templateUrl:
+    './app.html',
 })
 export class App {
-  protected readonly title = signal('web-shell');
+  readonly auth =
+    inject(AuthService);
+
+  logout(): void {
+    void this.auth.logout();
+  }
 }
