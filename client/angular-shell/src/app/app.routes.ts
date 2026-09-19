@@ -1,6 +1,6 @@
 import { Routes, } from '@angular/router';
-import { loadRemoteModule, } from '@angular-architects/native-federation';
 import { authGuard, } from './core/auth/auth.guard';
+import { loadRemoteRoutes } from './core/federation/remote-loader';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'tenants', pathMatch: 'full', },
@@ -8,6 +8,16 @@ export const routes: Routes = [
     {
         path: 'tenants',
         canActivate: [authGuard,],
-        loadChildren: () => loadRemoteModule('tenant-mfe', './Routes',).then(m => m.TENANT_ROUTES),
+        loadChildren: () => loadRemoteRoutes('tenant-mfe', './Routes', 'TENANT_ROUTES'),
+    },
+    {
+        path: 'students',
+        canActivate: [authGuard,],
+        loadChildren: () => loadRemoteRoutes('mfe-student', './Routes', 'STUDENT_ROUTES'),
+    },
+    {
+        path: 'reports',
+        canActivate: [authGuard,],
+        loadChildren: () => loadRemoteRoutes('mfe-reports', './Routes', 'REPORTS_ROUTES'),
     },
 ];

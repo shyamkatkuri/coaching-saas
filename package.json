@@ -10,16 +10,19 @@
   "scripts": {
     "start:angular-shell": "npm run start --workspace=@coaching/angular-shell",
     "start:mfe-tenant": "npm run start --workspace=@coaching/mfe-tenant",
+    "start:mfe-student": "npm run start --workspace=@coaching/mfe-student",
+    "start:mfe-reports": "npm run start --workspace=@coaching/mfe-reports",
     "start:core-api": "npm run start:dev --workspace=@coaching/core-api",
     "start:api-gateway": "npm run start:dev --workspace=@coaching/api-gateway",
     "start:next-public": "npm run dev --workspace=@coaching/next-public",
-    "start:all": "concurrently \"npm run start:angular-shell\" \"npm run start:mfe-tenant\" \"npm run start:core-api\" \"npm run start:api-gateway\" \"npm run start:next-public\""
+    "start:all": "concurrently \"npm run start:angular-shell\" \"npm run start:mfe-tenant\" \"npm run start:mfe-student\" \"npm run start:mfe-reports\" \"npm run start:core-api\" \"npm run start:api-gateway\" \"npm run start:next-public\""
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "concurrently": "^10.0.5"
   },
   "dependencies": {
+    "@angular/ssr": "^22.1.8",
     "@nestjs/config": "^4.0.4",
     "pg": "^8.23.0"
   }

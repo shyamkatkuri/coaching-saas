@@ -118,4 +118,12 @@ export class TenantApplicationService {
             request,
         );
     }
+
+    async findBySlug(
+        slug: string,
+    ) {
+        return this.tenants.findBySlug(
+            slug.toLowerCase(),
+        );
+    }
 }

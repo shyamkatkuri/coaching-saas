@@ -25,12 +25,14 @@ import { PostgresTenantSettingsRepository } from './infrastructure/persistence/p
 import { BRANCH_REPOSITORY } from './domain/repositories/branch.repository';
 import { TENANT_SETTINGS_REPOSITORY } from './domain/repositories/tenant-settings.repository';
 import { PostgresBranchRepository } from './infrastructure/persistence/postgres/postgres-branch.repository';
+import { PublicTenantController } from './presentation/controllers/public-tenant.controller';
 
 @Module({
     controllers: [
         TenantController,
         BranchController,
         TenantSettingsController,
+        PublicTenantController
     ],
 
     providers: [
