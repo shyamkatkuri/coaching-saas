@@ -20,4 +20,9 @@ export const routes: Routes = [
         canActivate: [authGuard,],
         loadChildren: () => loadRemoteRoutes('mfe-reports', './Routes', 'REPORTS_ROUTES'),
     },
+    {
+        path: 'labs/next',
+        canActivate: [authGuard,],
+        loadComponent: () => import('./features/labs/next-lab.component').then(m => m.NextLabComponent,),
+    },
 ];
