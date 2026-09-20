@@ -21,8 +21,17 @@
         "build": {
           "builder": "@angular-architects/native-federation:build",
           "options": {
-            "cacheExternalArtifacts": true,
-            "tsConfig": "tsconfig.federation.json"
+            "projectName": "mfe-student",
+            "target": "mfe-student:esbuild:development",
+            "rebuildDelay": 0,
+            "dev": true,
+            "port": 4203,
+            "tsConfig": "tsconfig.federation.json",
+            "federationConfigPath": "federation.config.mjs",
+            "entryPoints": [
+              "src/main.ts"
+            ],
+            "cacheExternalArtifacts": false
           },
           "configurations": {
             "production": {
@@ -39,12 +48,17 @@
           "builder": "@angular-architects/native-federation:build",
           "options": {
             "target": "mfe-student:serve-original:development",
-            "tsConfig": "tsconfig.federation.json",
+            "projectName": "mfe-student",
             "rebuildDelay": 500,
-            "cacheExternalArtifacts": true,
             "dev": true,
-            "devServer": true,
-            "port": 0
+            "port": 4203,
+            "tsConfig": "tsconfig.federation.json",
+            "federationConfigPath": "federation.config.mjs",
+            "entryPoints": [
+              "src/main.ts"
+            ],
+            "cacheExternalArtifacts": false,
+            "devServer": true
           }
         },
         "test": {
@@ -62,11 +76,17 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss"
+            ],
             "security": {
-              "allowedHosts": ["localhost"]
+              "allowedHosts": [
+                "localhost"
+              ]
             },
-            "polyfills": ["es-module-shims"]
+            "polyfills": [
+              "es-module-shims"
+            ]
           },
           "configurations": {
             "production": {

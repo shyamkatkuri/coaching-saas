@@ -13,12 +13,12 @@ export const routes: Routes = [
     {
         path: 'students',
         canActivate: [authGuard,],
-        loadChildren: () => loadRemoteRoutes('mfe-student', './Routes', 'STUDENT_ROUTES'),
+        loadChildren: () => loadRemoteRoutes('mfe-student', './routes', 'STUDENT_ROUTES'),
     },
     {
         path: 'reports',
         canActivate: [authGuard,],
-        loadChildren: () => loadRemoteRoutes('mfe-reports', './Routes', 'REPORTS_ROUTES'),
+        loadChildren: () => loadRemoteRoutes('mfe-reports', './routes', 'REPORTS_ROUTES'),
     },
     {
         path: 'labs/next',

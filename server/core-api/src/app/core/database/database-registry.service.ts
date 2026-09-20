@@ -116,13 +116,73 @@ export class DatabaseRegistryService
             userPool,
         );
 
+        const studentPool =
+            new Pool({
+                host: this.config.getOrThrow<string>('DB_HOST'),
+                port: this.config.get<number>('DB_PORT') ?? 5432,
+                user: this.config.getOrThrow<string>('DB_USER'),
+                password: this.config.getOrThrow<string>('DB_PASSWORD'),
+                database: this.config.getOrThrow<string>('STUDENT_DB_NAME'),
+            });
+
+        this.pools.set(
+            DATABASES.STUDENT,
+            studentPool,
+        );
+
+        const coursePool =
+            new Pool({
+                host: this.config.getOrThrow<string>('DB_HOST'),
+                port: this.config.get<number>('DB_PORT') ?? 5432,
+                user: this.config.getOrThrow<string>('DB_USER'),
+                password: this.config.getOrThrow<string>('DB_PASSWORD'),
+                database: this.config.getOrThrow<string>('COURSE_DB_NAME'),
+            });
+
+        this.pools.set(
+            DATABASES.COURSE,
+            coursePool,
+        );
+
+        const trainerPool =
+            new Pool({
+                host: this.config.getOrThrow<string>('DB_HOST'),
+                port: this.config.get<number>('DB_PORT') ?? 5432,
+                user: this.config.getOrThrow<string>('DB_USER'),
+                password: this.config.getOrThrow<string>('DB_PASSWORD'),
+                database: this.config.getOrThrow<string>('TRAINER_DB_NAME'),
+            });
+
+        this.pools.set(
+            DATABASES.TRAINER,
+            trainerPool,
+        );
+
+        const batchPool =
+            new Pool({
+                host: this.config.getOrThrow<string>('DB_HOST'),
+                port: this.config.get<number>('DB_PORT') ?? 5432,
+                user: this.config.getOrThrow<string>('DB_USER'),
+                password: this.config.getOrThrow<string>('DB_PASSWORD'),
+                database: this.config.getOrThrow<string>('BATCH_DB_NAME'),
+            });
+
+        this.pools.set(
+            DATABASES.BATCH,
+            batchPool,
+        );
+
         await Promise.all([
             tenantPool.query('SELECT 1'),
             userPool.query('SELECT 1'),
+            studentPool.query('SELECT 1'),
+            coursePool.query('SELECT 1'),
+            trainerPool.query('SELECT 1'),
+            batchPool.query('SELECT 1'),
         ]);
 
         this.logger.log(
-            'Connected to tenant_db and user_db',
+            'Connected to tenant_db, user_db, and student_db',
             DatabaseRegistryService.name,
         );
     }

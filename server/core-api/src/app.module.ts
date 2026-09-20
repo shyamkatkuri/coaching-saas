@@ -9,6 +9,8 @@ import { HealthModule } from './app/health/health.module';
 import { TenantModule } from './app/modules/tenant/tenant.module';
 import { DatabaseModule } from './app/core/database/database.module';
 import { CorrelationIdMiddleware } from './app/core/http/correlation-id.middleware';
+import { StudentModule } from './app/modules/student/student.module';
+import { IdentityModule } from './app/modules/identity/identity.module';
 
 
 @Module({
@@ -26,41 +28,29 @@ import { CorrelationIdMiddleware } from './app/core/http/correlation-id.middlewa
           )
           .default('development'),
 
-        PORT: Joi.number()
-          .port()
-          .default(3001),
+        PORT: Joi.number().port().default(3001),
+        DB_HOST: Joi.string().required(),
+        DB_PORT: Joi.number().port().default(5432),
+        DB_NAME: Joi.string().required(),
+        DB_USER: Joi.string().required(),
+        DB_PASSWORD: Joi.string().required(),
 
-        DB_HOST: Joi.string()
-          .required(),
+        USER_DB_NAME: Joi.string().required(),
+        STUDENT_DB_NAME: Joi.string().required(),
+        COURSE_DB_NAME: Joi.string().required(),
+        TRAINER_DB_NAME: Joi.string().required(),
+        BATCH_DB_NAME: Joi.string().required(),
 
-        DB_PORT: Joi.number()
-          .port()
-          .default(5432),
-
-        DB_NAME: Joi.string()
-          .required(),
-
-        DB_USER: Joi.string()
-          .required(),
-
-        DB_PASSWORD: Joi.string()
-          .required(),
-
-        USER_DB_NAME: Joi.string()
-          .required(),
-
-        KEYCLOAK_ISSUER: Joi.string()
-          .uri()
-          .required(),
-
-        KEYCLOAK_AUDIENCE: Joi.string()
-          .required(),
+        KEYCLOAK_ISSUER: Joi.string().uri().required(),
+        KEYCLOAK_AUDIENCE: Joi.string().required(),
       }),
     }),
     CoreModule,
     DatabaseModule,
     HealthModule,
-    TenantModule],
+    TenantModule,
+    StudentModule,
+    IdentityModule],
   controllers: [],
   providers: []
 })
