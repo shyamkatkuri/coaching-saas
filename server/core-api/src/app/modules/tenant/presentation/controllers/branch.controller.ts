@@ -10,7 +10,8 @@ import {
 import { BranchApplicationService } from '../../application/branch-application.service';
 import { CreateBranchDto } from '../dto/create-branch.dto';
 import { UpdateBranchDto } from '../dto/update-branch.dto';
-import { RequireAccess } from 'src/app/core/security/authorization/require-access.decorator';
+import { RequireAccess } from '../../../../core/security/authorization/require-access.decorator';
+
 
 @Controller('tenants/:organizationId/branches')
 export class BranchController {

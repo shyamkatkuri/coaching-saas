@@ -7,7 +7,8 @@ import {
 import {
     IdentityService,
 } from '../application/identity.service';
-import type { AuthenticatedRequest } from 'src/app/core/security/authentication/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../../../core/security/authentication/jwt-auth.guard';
+
 
 
 

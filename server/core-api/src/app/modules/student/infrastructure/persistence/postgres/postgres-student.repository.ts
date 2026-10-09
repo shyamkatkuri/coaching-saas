@@ -106,9 +106,7 @@ export class PostgresStudentRepository
                 ],
             );
 
-        if (
-            result.rowCount === 0
-        ) {
+        if (result.rowCount === 0) {
             return null;
         }
 

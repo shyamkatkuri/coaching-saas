@@ -17,6 +17,7 @@ import {
 import {
     STUDENT_REPOSITORY,
 } from './domain/repositories/student.repository';
+import { StudentLookupService } from './application/student-lookup.service';
 
 @Module({
     controllers: [
@@ -25,7 +26,7 @@ import {
 
     providers: [
         StudentApplicationService,
-
+        StudentLookupService,
         PostgresStudentRepository,
 
         {
@@ -35,6 +36,10 @@ import {
             useExisting:
                 PostgresStudentRepository,
         },
+    ],
+
+    exports: [
+        StudentLookupService
     ],
 })
 export class StudentModule { }

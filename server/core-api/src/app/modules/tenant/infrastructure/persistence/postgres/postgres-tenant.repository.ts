@@ -7,7 +7,8 @@ import {
 } from '../../../domain/repositories/tenant.repository';
 
 import { Tenant } from '../../../domain/models/tenant.model';
-import { DatabaseService } from 'src/app/core/database/database.service';
+import { DatabaseService } from '../../../../../core/database/database.service';
+
 
 interface TenantRow {
     id: string;

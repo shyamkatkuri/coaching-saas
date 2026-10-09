@@ -14,7 +14,8 @@ import {
 import {
     UpsertTenantSettingsDto,
 } from '../dto/upsert-tenant-settings.dto';
-import { RequireAccess } from 'src/app/core/security/authorization/require-access.decorator';
+import { RequireAccess } from '../../../../core/security/authorization/require-access.decorator';
+
 
 @Controller('tenants/:organizationId/settings')
 export class TenantSettingsController {

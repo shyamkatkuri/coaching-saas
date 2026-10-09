@@ -11,6 +11,10 @@ import { DatabaseModule } from './app/core/database/database.module';
 import { CorrelationIdMiddleware } from './app/core/http/correlation-id.middleware';
 import { StudentModule } from './app/modules/student/student.module';
 import { IdentityModule } from './app/modules/identity/identity.module';
+import { BatchModule } from './app/modules/batch/batch.module';
+import { TrainerModule } from './app/modules/trainer/trainer.module';
+import { CourseModule } from './app/modules/course/course.module';
+import { EnrollmentModule } from './app/modules/enrollment/enrollment.module';
 
 
 @Module({
@@ -40,6 +44,7 @@ import { IdentityModule } from './app/modules/identity/identity.module';
         COURSE_DB_NAME: Joi.string().required(),
         TRAINER_DB_NAME: Joi.string().required(),
         BATCH_DB_NAME: Joi.string().required(),
+        ENROLLMENT_DB_NAME: Joi.string().required(),
 
         KEYCLOAK_ISSUER: Joi.string().uri().required(),
         KEYCLOAK_AUDIENCE: Joi.string().required(),
@@ -50,7 +55,12 @@ import { IdentityModule } from './app/modules/identity/identity.module';
     HealthModule,
     TenantModule,
     StudentModule,
-    IdentityModule],
+    IdentityModule,
+    CourseModule,
+    TrainerModule,
+    BatchModule,
+    EnrollmentModule
+  ],
   controllers: [],
   providers: []
 })

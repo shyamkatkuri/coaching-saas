@@ -20,157 +20,70 @@ import {
 import { AppLoggerService } from '../logging/app-logger.service';
 
 @Injectable()
-export class DatabaseRegistryService
-    implements
-    OnModuleInit,
-    OnModuleDestroy {
-    private readonly pools =
-        new Map<DatabaseName, Pool>();
+export class DatabaseRegistryService implements OnModuleInit, OnModuleDestroy {
 
-    constructor(
-        private readonly config:
-            ConfigService,
+    private readonly pools = new Map<DatabaseName, Pool>();
 
-        private readonly logger:
-            AppLoggerService,
-    ) { }
+    constructor(private readonly config: ConfigService, private readonly logger: AppLoggerService,) {
+
+    }
 
     async onModuleInit(): Promise<void> {
-        const tenantPool =
-            new Pool({
-                host:
-                    this.config.getOrThrow<string>(
-                        'DB_HOST',
-                    ),
 
-                port:
-                    this.config.get<number>(
-                        'DB_PORT',
-                    ) ?? 5432,
+        const db_defaults = {
+            host: this.config.getOrThrow<string>('DB_HOST'),
+            port: this.config.get<number>('DB_PORT') ?? 5432,
+            user: this.config.getOrThrow<string>('DB_USER'),
+            password: this.config.getOrThrow<string>('DB_PASSWORD')
+        };
 
-                database:
-                    this.config.getOrThrow<string>(
-                        'DB_NAME',
-                    ),
+        const tenantPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('DB_NAME',),
+            max: 10,
+            idleTimeoutMillis: 30_000,
+            connectionTimeoutMillis: 5_000,
+        });
+        this.pools.set(DATABASES.TENANT, tenantPool,);
 
-                user:
-                    this.config.getOrThrow<string>(
-                        'DB_USER',
-                    ),
+        const userPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('USER_DB_NAME',),
+            max: 10,
+            idleTimeoutMillis: 30_000,
+            connectionTimeoutMillis: 5_000,
+        });
+        this.pools.set(DATABASES.USER, userPool,);
 
-                password:
-                    this.config.getOrThrow<string>(
-                        'DB_PASSWORD',
-                    ),
+        const studentPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('STUDENT_DB_NAME'),
+        });
+        this.pools.set(DATABASES.STUDENT, studentPool,);
 
-                max: 10,
+        const coursePool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('COURSE_DB_NAME'),
+        });
+        this.pools.set(DATABASES.COURSE, coursePool,);
 
-                idleTimeoutMillis: 30_000,
+        const trainerPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('TRAINER_DB_NAME'),
+        });
+        this.pools.set(DATABASES.TRAINER, trainerPool,);
 
-                connectionTimeoutMillis: 5_000,
-            });
+        const batchPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('BATCH_DB_NAME'),
+        });
+        this.pools.set(DATABASES.BATCH, batchPool,);
 
-        this.pools.set(
-            DATABASES.TENANT,
-            tenantPool,
-        );
-
-        const userPool =
-            new Pool({
-                host:
-                    this.config.getOrThrow<string>(
-                        'DB_HOST',
-                    ),
-
-                port:
-                    this.config.get<number>(
-                        'DB_PORT',
-                    ) ?? 5432,
-
-                database:
-                    this.config.getOrThrow<string>(
-                        'USER_DB_NAME',
-                    ),
-
-                user:
-                    this.config.getOrThrow<string>(
-                        'DB_USER',
-                    ),
-
-                password:
-                    this.config.getOrThrow<string>(
-                        'DB_PASSWORD',
-                    ),
-
-                max: 10,
-
-                idleTimeoutMillis:
-                    30_000,
-
-                connectionTimeoutMillis:
-                    5_000,
-            });
-
-        this.pools.set(
-            DATABASES.USER,
-            userPool,
-        );
-
-        const studentPool =
-            new Pool({
-                host: this.config.getOrThrow<string>('DB_HOST'),
-                port: this.config.get<number>('DB_PORT') ?? 5432,
-                user: this.config.getOrThrow<string>('DB_USER'),
-                password: this.config.getOrThrow<string>('DB_PASSWORD'),
-                database: this.config.getOrThrow<string>('STUDENT_DB_NAME'),
-            });
-
-        this.pools.set(
-            DATABASES.STUDENT,
-            studentPool,
-        );
-
-        const coursePool =
-            new Pool({
-                host: this.config.getOrThrow<string>('DB_HOST'),
-                port: this.config.get<number>('DB_PORT') ?? 5432,
-                user: this.config.getOrThrow<string>('DB_USER'),
-                password: this.config.getOrThrow<string>('DB_PASSWORD'),
-                database: this.config.getOrThrow<string>('COURSE_DB_NAME'),
-            });
-
-        this.pools.set(
-            DATABASES.COURSE,
-            coursePool,
-        );
-
-        const trainerPool =
-            new Pool({
-                host: this.config.getOrThrow<string>('DB_HOST'),
-                port: this.config.get<number>('DB_PORT') ?? 5432,
-                user: this.config.getOrThrow<string>('DB_USER'),
-                password: this.config.getOrThrow<string>('DB_PASSWORD'),
-                database: this.config.getOrThrow<string>('TRAINER_DB_NAME'),
-            });
-
-        this.pools.set(
-            DATABASES.TRAINER,
-            trainerPool,
-        );
-
-        const batchPool =
-            new Pool({
-                host: this.config.getOrThrow<string>('DB_HOST'),
-                port: this.config.get<number>('DB_PORT') ?? 5432,
-                user: this.config.getOrThrow<string>('DB_USER'),
-                password: this.config.getOrThrow<string>('DB_PASSWORD'),
-                database: this.config.getOrThrow<string>('BATCH_DB_NAME'),
-            });
-
-        this.pools.set(
-            DATABASES.BATCH,
-            batchPool,
-        );
+        const enrollmentPool = new Pool({
+            ...db_defaults,
+            database: this.config.getOrThrow<string>('ENROLLMENT_DB_NAME',),
+        });
+        this.pools.set(DATABASES.ENROLLMENT, enrollmentPool,);
 
         await Promise.all([
             tenantPool.query('SELECT 1'),
@@ -179,6 +92,7 @@ export class DatabaseRegistryService
             coursePool.query('SELECT 1'),
             trainerPool.query('SELECT 1'),
             batchPool.query('SELECT 1'),
+            enrollmentPool.query('SELECT 1')
         ]);
 
         this.logger.log(
