@@ -19,6 +19,8 @@ import type {
 import type {
     UpdateStudentDto,
 } from '../presentation/dto/update-student.dto';
+import { AppCacheService } from '../../../core/redis/cache/app-cache.service';
+import { CacheKeyFactory } from '../../../core/redis/cache/cache-key.factory';
 
 @Injectable()
 export class StudentApplicationService {
@@ -29,6 +31,12 @@ export class StudentApplicationService {
         )
         private readonly students:
             StudentRepository,
+
+        private readonly cache:
+            AppCacheService,
+
+        private readonly cacheKeys:
+            CacheKeyFactory,
     ) { }
 
     findAll(
@@ -36,10 +44,8 @@ export class StudentApplicationService {
         branchId: string,
     ) {
 
-        return this.students.findAll(
-            organizationId,
-            branchId,
-        );
+        const key = this.cacheKeys.batches(organizationId, branchId);
+        return this.cache.getOrSet(key, () => this.students.findAll(organizationId, branchId), 30);
     }
 
     async findById(
@@ -48,12 +54,8 @@ export class StudentApplicationService {
         studentId: string,
     ) {
 
-        const student =
-            await this.students.findById(
-                organizationId,
-                branchId,
-                studentId,
-            );
+        const key = this.cacheKeys.student(organizationId, branchId, studentId,);
+        const student = await this.cache.getOrSet(key, () => this.students.findById(organizationId, branchId, studentId,), 60,);
 
         if (!student) {
             throw new NotFoundException(
@@ -64,17 +66,21 @@ export class StudentApplicationService {
         return student;
     }
 
-    create(
+    async create(
         organizationId: string,
         branchId: string,
         dto: CreateStudentDto,
     ) {
 
-        return this.students.create({
+        const student = await this.students.create({
             organizationId,
             branchId,
             ...dto,
         });
+
+        await this.cache.invalidate(this.cacheKeys.students(organizationId, branchId,),);
+
+        return student;
     }
 
     async update(
@@ -97,6 +103,21 @@ export class StudentApplicationService {
                 'Student not found',
             );
         }
+
+        await this.cache
+            .invalidate(
+
+                this.cacheKeys.students(
+                    organizationId,
+                    branchId,
+                ),
+
+                this.cacheKeys.student(
+                    organizationId,
+                    branchId,
+                    studentId,
+                ),
+            );
 
         return student;
     }

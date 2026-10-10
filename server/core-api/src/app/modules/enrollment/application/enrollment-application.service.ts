@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Inject,
     Injectable,
@@ -24,6 +25,8 @@ import type {
 import type {
     CreateEnrollmentDto,
 } from '../presentation/dto/create-enrollment.dto';
+import { DistributedLockService } from '../../../core/redis/lock/distributed-lock.service';
+import { CacheKeyFactory } from '../../../core/redis/cache/cache-key.factory';
 
 @Injectable()
 export class EnrollmentApplicationService {
@@ -40,6 +43,12 @@ export class EnrollmentApplicationService {
 
         private readonly batches:
             BatchLookupService,
+
+        private readonly locks:
+            DistributedLockService,
+
+        private readonly cacheKeys:
+            CacheKeyFactory,
     ) { }
 
     async create(
@@ -48,6 +57,25 @@ export class EnrollmentApplicationService {
         dto: CreateEnrollmentDto,
         applicationUserId?: string,
     ) {
+
+        if (
+            (
+                dto.discountAmount ??
+                0
+            ) >
+            dto.grossFee
+        ) {
+
+            throw new BadRequestException(
+                'Discount cannot exceed gross fee',
+            );
+        }
+
+        /*
+         * Cross-database validation
+         * can happen before taking
+         * the capacity lock.
+         */
 
         await this.students
             .ensureExists(
@@ -64,62 +92,110 @@ export class EnrollmentApplicationService {
                     dto.batchId,
                 );
 
-        const currentCount =
-            await this.enrollments
-                .countActiveByBatch(
+        const lockKey =
+            this.cacheKeys
+                .enrollmentCapacityLock(
                     organizationId,
                     branchId,
                     dto.batchId,
                 );
 
-        if (
-            currentCount >=
-            batch.capacity
-        ) {
-            throw new ConflictException(
-                'Batch capacity has been reached',
+        return this.locks
+            .withLock(
+                lockKey,
+
+                async () => {
+
+                    /*
+                     * CRITICAL:
+                     *
+                     * Count must happen
+                     * AFTER acquiring lock.
+                     */
+
+                    const activeCount =
+                        await this.enrollments
+                            .countActiveByBatch(
+                                organizationId,
+                                branchId,
+                                dto.batchId,
+                            );
+
+                    if (
+                        activeCount >=
+                        batch.capacity
+                    ) {
+
+                        throw new ConflictException(
+                            'Batch capacity has been reached',
+                        );
+                    }
+
+                    try {
+
+                        return await this
+                            .enrollments
+                            .create({
+                                organizationId,
+                                branchId,
+
+                                studentId:
+                                    dto.studentId,
+
+                                courseId:
+                                    batch.courseId,
+
+                                batchId:
+                                    batch.id,
+
+                                grossFee:
+                                    dto.grossFee,
+
+                                discountAmount:
+                                    dto
+                                        .discountAmount ??
+                                    0,
+
+                                createdBy:
+                                    applicationUserId,
+                            });
+
+                    } catch (
+                    error: any
+                    ) {
+
+                        if (
+                            error?.code ===
+                            '23505'
+                        ) {
+
+                            throw new ConflictException(
+                                'Student is already actively enrolled in this batch',
+                            );
+                        }
+
+                        if (
+                            error?.message ===
+                            'DISCOUNT_EXCEEDS_GROSS_FEE'
+                        ) {
+
+                            throw new BadRequestException(
+                                'Discount cannot exceed gross fee',
+                            );
+                        }
+
+                        throw error;
+                    }
+                },
+
+                {
+                    ttlMs:
+                        10_000,
+
+                    waitMs:
+                        3_000,
+                },
             );
-        }
-
-        try {
-
-            return await this.enrollments
-                .create({
-                    organizationId,
-                    branchId,
-
-                    studentId:
-                        dto.studentId,
-
-                    courseId:
-                        batch.courseId,
-
-                    batchId:
-                        batch.id,
-
-                    grossFee:
-                        dto.grossFee,
-
-                    discountAmount:
-                        dto.discountAmount ?? 0,
-
-                    createdBy:
-                        applicationUserId,
-                });
-
-        } catch (error: any) {
-
-            if (
-                error?.code ===
-                '23505'
-            ) {
-                throw new ConflictException(
-                    'Student is already actively enrolled in this batch',
-                );
-            }
-
-            throw error;
-        }
     }
 
     findByStudent(

@@ -28,6 +28,7 @@ import {
 import {
     RefundPaymentDto,
 } from '../dto/refund-payment.dto';
+import { RateLimit } from '../../../../core/redis/rate-limit/rate-limit.decorator';
 
 @Controller(
     'organizations/:organizationId/branches/:branchId',
@@ -42,6 +43,19 @@ export class FeeController {
     @Get(
         'enrollments/:enrollmentId/fees',
     )
+    @RateLimit({
+        limit:
+            100,
+
+        windowMs:
+            60_000,
+
+        scope:
+            'USER',
+
+        failClosed:
+            false,
+    })
     @RequireAccess({
         scope:
             'BRANCH',
@@ -84,6 +98,22 @@ export class FeeController {
     @Post(
         'enrollments/:enrollmentId/payments',
     )
+    @RateLimit({
+        limit: 10,
+        windowMs: 60_000,
+        scope: 'USER',
+
+        /*
+         * Financial endpoint.
+         *
+         * If Redis rate-limit
+         * infrastructure fails,
+         * fail closed.
+         */
+        failClosed:
+            true,
+    })
+
     @RequireAccess({
         scope:
             'BRANCH',
@@ -152,6 +182,19 @@ export class FeeController {
     @Post(
         'payments/:paymentId/refunds',
     )
+    @RateLimit({
+        limit:
+            5,
+
+        windowMs:
+            60_000,
+
+        scope:
+            'USER',
+
+        failClosed:
+            true,
+    })
     @RequireAccess({
         scope:
             'BRANCH',

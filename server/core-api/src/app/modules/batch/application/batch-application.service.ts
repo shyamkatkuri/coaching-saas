@@ -21,6 +21,8 @@ import type {
     CreateBatchData,
     UpdateBatchData,
 } from '../domain/repositories/batch.repository';
+import { AppCacheService } from '../../../core/redis/cache/app-cache.service';
+import { CacheKeyFactory } from '../../../core/redis/cache/cache-key.factory';
 
 @Injectable()
 export class BatchApplicationService {
@@ -37,6 +39,12 @@ export class BatchApplicationService {
 
         private readonly trainers:
             TrainerLookupService,
+
+        private readonly cache:
+            AppCacheService,
+
+        private readonly cacheKeys:
+            CacheKeyFactory,
     ) { }
 
     findAll(
@@ -44,10 +52,30 @@ export class BatchApplicationService {
         branchId: string,
     ) {
 
-        return this.batches.findAll(
-            organizationId,
-            branchId,
-        );
+        const key =
+            this.cacheKeys
+                .batches(
+                    organizationId,
+                    branchId,
+                );
+
+        return this.cache
+            .getOrSet(
+                key,
+
+                () =>
+                    this.batches
+                        .findAll(
+                            organizationId,
+                            branchId,
+                        ),
+
+                /*
+                 * Batches change more
+                 * frequently than courses.
+                 */
+                30,
+            );
     }
 
     async findById(
@@ -56,14 +84,31 @@ export class BatchApplicationService {
         batchId: string,
     ) {
 
-        const batch =
-            await this.batches.findById(
+        const key =
+            this.cacheKeys.batch(
                 organizationId,
                 branchId,
                 batchId,
             );
 
+        const batch =
+            await this.cache
+                .getOrSet(
+                    key,
+
+                    () =>
+                        this.batches
+                            .findById(
+                                organizationId,
+                                branchId,
+                                batchId,
+                            ),
+
+                    30,
+                );
+
         if (!batch) {
+
             throw new NotFoundException(
                 'Batch not found',
             );
@@ -96,11 +141,15 @@ export class BatchApplicationService {
                 data.trainerIds,
             );
 
-        return this.batches.create({
+        const batch = await this.batches.create({
             organizationId,
             branchId,
             ...data,
         });
+
+        await this.cache.invalidate(this.cacheKeys.batches(organizationId, branchId,));
+
+        return batch;
     }
 
     async update(
@@ -146,6 +195,21 @@ export class BatchApplicationService {
                 'Batch not found',
             );
         }
+
+        await this.cache
+            .invalidate(
+
+                this.cacheKeys.batches(
+                    organizationId,
+                    branchId,
+                ),
+
+                this.cacheKeys.batch(
+                    organizationId,
+                    branchId,
+                    batchId,
+                ),
+            );
 
         return batch;
     }

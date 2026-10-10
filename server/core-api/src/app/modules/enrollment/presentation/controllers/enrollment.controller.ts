@@ -22,6 +22,7 @@ import {
     CreateEnrollmentDto,
 } from '../dto/create-enrollment.dto';
 import type { AuthenticatedRequest } from '../../../../core/security/authentication/jwt-auth.guard';
+import { RateLimit } from '../../../../core/redis/rate-limit/rate-limit.decorator';
 
 @Controller(
     'organizations/:organizationId/branches/:branchId/enrollments',
@@ -34,8 +35,24 @@ export class EnrollmentController {
     ) { }
 
     @Post()
+
+    @RateLimit({
+        limit:
+            20,
+
+        windowMs:
+            60_000,
+
+        scope:
+            'USER',
+
+        failClosed:
+            true,
+    })
+
     @RequireAccess({
-        scope: 'BRANCH',
+        scope:
+            'BRANCH',
 
         permissions: [
             'enrollment:create',

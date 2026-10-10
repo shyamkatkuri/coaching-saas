@@ -1,0 +1,6 @@
+export const REDIS_DEFAULTS = {
+    CACHE_TTL_SECONDS: 60,
+    LOCK_TTL_MS: 10_000,
+    LOCK_WAIT_MS: 3_000,
+    LOCK_RETRY_DELAY_MS: 100,
+} as const;
