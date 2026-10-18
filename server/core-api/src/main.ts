@@ -10,7 +10,13 @@ import {
   NestFactory,
 } from '@nestjs/core';
 
+import {
+  Logger,
+} from '@nestjs/common';
 
+import {
+  RedisIoAdapter,
+} from './app/realtime/redis/redis-io.adapter';
 
 import {
   AppLoggerService,
@@ -26,10 +32,7 @@ async function bootstrap() {
       },
     );
 
-  const logger =
-    app.get(
-      AppLoggerService,
-    );
+  const logger = app.get(AppLoggerService,);
 
   app.useLogger(
     logger,
@@ -74,7 +77,6 @@ async function bootstrap() {
       'X-Correlation-Id',
     ],
   });
-
   const config =
     app.get(
       ConfigService,
@@ -85,11 +87,53 @@ async function bootstrap() {
       'PORT',
     ) ?? 3001;
 
+  const bootstrapLogger =
+    new Logger(
+      'Bootstrap',
+    );
+
+  const redisRequired =
+    (
+      config.get<string>(
+        'WS_REDIS_REQUIRED',
+      ) ??
+      'false'
+    ) ===
+    'true';
+
+  const redisIoAdapter =
+    new RedisIoAdapter(
+      app,
+    );
+
+  try {
+
+    await redisIoAdapter
+      .connectToRedis();
+
+    app.useWebSocketAdapter(
+      redisIoAdapter,
+    );
+
+  } catch (error) {
+
+    if (
+      redisRequired
+    ) {
+
+      throw error;
+    }
+
+    bootstrapLogger.warn(
+      'Socket.IO Redis adapter unavailable. Realtime will work only within this API instance.',
+    );
+  }
+
   await app.listen(
     port,
   );
 
-  logger.log(
+  bootstrapLogger.log(
     `Core API running on port ${port}`,
     'Bootstrap',
   );

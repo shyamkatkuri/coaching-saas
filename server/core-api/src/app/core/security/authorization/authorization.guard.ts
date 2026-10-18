@@ -22,9 +22,11 @@ import {
     AuthorizationService,
 } from './authorization.service';
 
-import type {
-    AuthenticatedRequest,
-} from '../authentication/jwt-auth.guard';
+import {
+    InternalServerErrorException,
+} from '@nestjs/common';
+import { getExecutionParams } from '../execution-request.util';
+import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 
 @Injectable()
 export class AuthorizationGuard
@@ -40,6 +42,9 @@ export class AuthorizationGuard
     async canActivate(
         context: ExecutionContext,
     ): Promise<boolean> {
+
+        const params = getExecutionParams(context);
+
         const rule =
             this.reflector
                 .getAllAndOverride<AccessRule>(
@@ -63,15 +68,13 @@ export class AuthorizationGuard
         }
 
         const request =
-            context
-                .switchToHttp()
-                .getRequest<
-                    AuthenticatedRequest
-                >();
+            context.getType<GqlContextType>() === 'graphql'
+                ? GqlExecutionContext.create(context).getContext()?.req
+                : context.switchToHttp().getRequest();
 
-        if (!request.auth) {
-            throw new UnauthorizedException(
-                'Authentication context is missing',
+        if (!request) {
+            throw new InternalServerErrorException(
+                'Request is unavailable in the authorization context',
             );
         }
 
@@ -104,10 +107,7 @@ export class AuthorizationGuard
                     rule.tenantParam ??
                     'organizationId';
 
-                const organizationIdValue =
-                    request.params[
-                    tenantParam
-                    ];
+                const organizationIdValue = tenantParam ? params[tenantParam] : undefined;
 
                 const organizationId =
                     Array.isArray(organizationIdValue)
@@ -140,15 +140,9 @@ export class AuthorizationGuard
                     rule.branchParam ??
                     'branchId';
 
-                const organizationIdValue =
-                    request.params[
-                    tenantParam
-                    ];
+                const organizationIdValue = tenantParam ? params[tenantParam] : undefined;
 
-                const branchIdValue =
-                    request.params[
-                    branchParam
-                    ];
+                const branchIdValue = branchParam ? params[branchParam] : undefined;
 
                 const organizationId =
                     Array.isArray(organizationIdValue)

@@ -35,6 +35,7 @@ import type {
 import {
     RedisRateLimitService,
 } from './redis-rate-limit.service';
+import { getExecutionOperation, getExecutionParams, getExecutionRequest } from '../../security/execution-request.util';
 
 interface RequestWithAuth
     extends Request {
@@ -110,9 +111,9 @@ export class RedisRateLimitGuard
             context.switchToHttp();
 
         const request =
-            http.getRequest<
-                RequestWithAuth
-            >();
+            getExecutionRequest(
+                context,
+            );
 
         const response =
             http.getResponse<
@@ -121,13 +122,15 @@ export class RedisRateLimitGuard
 
         const identity =
             this.getIdentity(
+                context,
                 request,
                 options,
             );
 
         const operation =
-            `${request.method}:` +
-            `${request.route?.path ?? request.path}`;
+            getExecutionOperation(
+                context,
+            );
 
         const key =
             this.keys.rateLimit(
@@ -187,6 +190,8 @@ export class RedisRateLimitGuard
     }
 
     private getIdentity(
+        context:
+            ExecutionContext,
         request:
             RequestWithAuth,
 
@@ -209,8 +214,8 @@ export class RedisRateLimitGuard
                 );
 
             case 'TENANT':
-
-                return (request.params['organizationId'] ?? request.ip ?? 'unknown');
+                const params = getExecutionParams(context);
+                return (params['organizationId'] ?? request.ip ?? 'unknown');
 
             case 'IP':
             default:

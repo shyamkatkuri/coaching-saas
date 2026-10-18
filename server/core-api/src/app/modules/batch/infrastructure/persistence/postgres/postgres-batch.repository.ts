@@ -23,6 +23,9 @@ import type {
     CreateBatchData,
     UpdateBatchData,
 } from '../../../domain/repositories/batch.repository';
+import { OutboxEventFactory } from '../../../../../core/messaging/outbox/outbox-event.factory';
+import { OutboxWriterService } from '../../../../../core/messaging/outbox/outbox-writer.service';
+import { INTEGRATION_EVENT_TYPES, INTEGRATION_TOPICS } from '../../../../../../../../../packages/contracts/dist/events/integration-event.contract';
 
 @Injectable()
 export class PostgresBatchRepository
@@ -31,6 +34,12 @@ export class PostgresBatchRepository
     constructor(
         private readonly databases:
             DatabaseRegistryService,
+
+        private readonly outbox:
+            OutboxWriterService,
+
+        private readonly eventFactory:
+            OutboxEventFactory,
     ) { }
 
     private get db() {
@@ -265,7 +274,7 @@ export class PostgresBatchRepository
                 'BEGIN',
             );
 
-            await client.query(
+            const batchResult = await client.query(
                 `
         UPDATE batches
         SET
@@ -309,6 +318,8 @@ export class PostgresBatchRepository
                 ],
             );
 
+            const batch = batchResult.rows[0];
+
             if (
                 data.trainerIds
             ) {
@@ -350,6 +361,44 @@ export class PostgresBatchRepository
                     data.schedules,
                 );
             }
+
+            const event =
+                this.eventFactory.create({
+
+                    topic:
+                        INTEGRATION_TOPICS
+                            .BATCH,
+
+                    eventType:
+                        INTEGRATION_EVENT_TYPES
+                            .BATCH_UPDATED,
+
+                    aggregateType:
+                        'Batch',
+
+                    aggregateId:
+                        batch.id,
+
+                    organizationId:
+                        batch.organizationId,
+
+                    branchId:
+                        batch.branchId,
+
+                    data: {
+
+                        batchId:
+                            batch.id,
+
+                        courseId:
+                            batch.courseId,
+                    },
+                });
+
+            await this.outbox.write(
+                client,
+                event,
+            );
 
             await client.query(
                 'COMMIT',
@@ -540,5 +589,66 @@ export class PostgresBatchRepository
             updatedAt:
                 row.updated_at,
         };
+    }
+
+    async findByIds(
+        organizationId: string,
+        branchId: string,
+        batchIds: string[],
+    ): Promise<Batch[]> {
+
+        if (
+            batchIds.length === 0
+        ) {
+            return [];
+        }
+
+        const result =
+            await this.db.query(
+                `
+      SELECT
+        id,
+        organization_id,
+        branch_id,
+        course_id,
+        name,
+        code,
+        start_date,
+        end_date,
+        capacity,
+        status,
+        created_at,
+        updated_at
+
+      FROM batches
+
+      WHERE organization_id = $1
+        AND branch_id = $2
+        AND id =
+          ANY($3::uuid[])
+      `,
+                [
+                    organizationId,
+                    branchId,
+                    batchIds,
+                ],
+            );
+
+        const batches:
+            Batch[] = [];
+
+        for (
+            const row
+            of result.rows
+        ) {
+
+            batches.push(
+                await this.loadDetails(
+                    row,
+                ),
+            );
+        }
+
+        return batches;
     }
 }

@@ -20,6 +20,9 @@ import type {
     CreateAttendanceSessionData,
     MarkAttendanceData,
 } from '../../../domain/repositories/attendance.repository';
+import { INTEGRATION_EVENT_TYPES, INTEGRATION_TOPICS } from '../../../../../../../../../packages/contracts/dist/events/integration-event.contract';
+import { OutboxEventFactory } from '../../../../../core/messaging/outbox/outbox-event.factory';
+import { OutboxWriterService } from '../../../../../core/messaging/outbox/outbox-writer.service';
 
 @Injectable()
 export class PostgresAttendanceRepository
@@ -28,6 +31,12 @@ export class PostgresAttendanceRepository
     constructor(
         private readonly databases:
             DatabaseRegistryService,
+
+        private readonly outbox:
+            OutboxWriterService,
+
+        private readonly eventFactory:
+            OutboxEventFactory,
     ) { }
 
     private get db() {
@@ -151,6 +160,9 @@ export class PostgresAttendanceRepository
         AttendanceRecord
     > {
 
+        const client =
+            await this.db.connect();
+
         const result =
             await this.db.query(
                 `
@@ -212,9 +224,61 @@ export class PostgresAttendanceRepository
                 ],
             );
 
-        return this.mapRecord(
+        const record = this.mapRecord(
             result.rows[0],
         );
+
+        const event =
+            this.eventFactory.create({
+
+                topic:
+                    INTEGRATION_TOPICS
+                        .ATTENDANCE,
+
+                eventType:
+                    INTEGRATION_EVENT_TYPES
+                        .ATTENDANCE_MARKED,
+
+                aggregateType:
+                    'AttendanceRecord',
+
+                aggregateId:
+                    record.id,
+
+                organizationId:
+                    data.organizationId,
+
+                branchId:
+                    data.branchId,
+
+                actorUserId:
+                    data.markedBy ??
+                    null,
+
+                data: {
+
+                    attendanceRecordId:
+                        record.id,
+
+                    sessionId:
+                        data.sessionId,
+
+                    enrollmentId:
+                        data.enrollmentId,
+
+                    studentId:
+                        data.studentId,
+
+                    status:
+                        data.status,
+                },
+            });
+
+        await this.outbox.write(client, event,);
+
+        await client.query('COMMIT',);
+
+        return record;
     }
 
     async getRecords(

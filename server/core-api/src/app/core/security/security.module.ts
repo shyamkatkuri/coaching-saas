@@ -47,6 +47,7 @@ import {
 
     exports: [
         AuthorizationService,
+        JwtVerifierService
     ],
 })
 export class SecurityModule { }

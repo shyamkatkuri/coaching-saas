@@ -29,6 +29,8 @@ import type {
 import type {
     RefundPaymentDto,
 } from '../presentation/dto/refund-payment.dto';
+import { RealtimePublisherService } from '../../../realtime/realtime-publisher.service';
+import { REALTIME_EVENTS, } from '@coaching/contracts';
 
 @Injectable()
 export class FeeApplicationService {
@@ -45,6 +47,9 @@ export class FeeApplicationService {
         )
         private readonly enrollments:
             EnrollmentRepository,
+
+        private readonly realtime:
+            RealtimePublisherService,
     ) { }
 
     async getSummary(
@@ -119,26 +124,46 @@ export class FeeApplicationService {
 
         try {
 
-            return await this.fees
-                .collectPayment({
+            const payment =
+                await this.fees
+                    .collectPayment({
+                        organizationId,
+                        branchId,
+                        enrollmentId,
+
+                        amount:
+                            dto.amount,
+
+                        paymentMethod:
+                            dto.paymentMethod,
+
+                        referenceNo:
+                            dto.referenceNo,
+
+                        idempotencyKey,
+
+                        collectedBy:
+                            applicationUserId,
+                    });
+
+            this.realtime
+                .emitToBranch(
                     organizationId,
                     branchId,
-                    enrollmentId,
 
-                    amount:
-                        dto.amount,
+                    REALTIME_EVENTS
+                        .PAYMENT_COLLECTED,
 
-                    paymentMethod:
-                        dto.paymentMethod,
+                    {
+                        paymentId:
+                            payment.id,
 
-                    referenceNo:
-                        dto.referenceNo,
+                        enrollmentId:
+                            payment.enrollmentId,
+                    },
+                );
 
-                    idempotencyKey,
-
-                    collectedBy:
-                        applicationUserId,
-                });
+            return payment;
 
         } catch (error: any) {
 
@@ -183,24 +208,42 @@ export class FeeApplicationService {
 
         try {
 
-            return await this.fees
-                .refundPayment({
+            const refund =
+                await this.fees
+                    .refundPayment({
+                        organizationId,
+                        branchId,
+                        paymentId,
+
+                        amount:
+                            dto.amount,
+
+                        reason:
+                            dto.reason,
+
+                        idempotencyKey,
+
+                        processedBy:
+                            applicationUserId,
+                    });
+
+            this.realtime
+                .emitToBranch(
                     organizationId,
                     branchId,
 
-                    paymentId,
+                    REALTIME_EVENTS
+                        .PAYMENT_REFUNDED,
 
-                    amount:
-                        dto.amount,
+                    {
+                        paymentId,
 
-                    reason:
-                        dto.reason,
+                        refundId:
+                            refund.id,
+                    },
+                );
 
-                    idempotencyKey,
-
-                    processedBy:
-                        applicationUserId,
-                });
+            return refund;
 
         } catch (error: any) {
 

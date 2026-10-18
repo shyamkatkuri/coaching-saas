@@ -20,7 +20,6 @@ import {
 import type {
     BranchRepository,
 } from '../domain/repositories/branch.repository';
-import { CreateTenantRequest, UpdateTenantRequest } from '@coaching/contracts/src/tenant/tenant.contract';
 import { CreateBranchDto } from '../presentation/dto/create-branch.dto';
 import { UpdateBranchDto } from '../presentation/dto/update-branch.dto';
 

@@ -52,6 +52,7 @@ import { BatchLookupService } from './application/batch-lookup.service';
     ],
 
     exports: [
+        BatchApplicationService,
         BatchLookupService
     ],
 })

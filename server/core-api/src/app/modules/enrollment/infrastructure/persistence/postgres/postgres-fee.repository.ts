@@ -21,6 +21,9 @@ import type {
     FeeRepository,
     RefundPaymentData,
 } from '../../../domain/repositories/fee.repository';
+import { INTEGRATION_EVENT_TYPES, INTEGRATION_TOPICS } from '../../../../../../../../../packages/contracts/dist/events/integration-event.contract';
+import { OutboxEventFactory } from '../../../../../core/messaging/outbox/outbox-event.factory';
+import { OutboxWriterService } from '../../../../../core/messaging/outbox/outbox-writer.service';
 
 @Injectable()
 export class PostgresFeeRepository
@@ -29,6 +32,12 @@ export class PostgresFeeRepository
     constructor(
         private readonly databases:
             DatabaseRegistryService,
+
+        private readonly outbox:
+            OutboxWriterService,
+
+        private readonly eventFactory:
+            OutboxEventFactory,
     ) { }
 
     private get db() {
@@ -172,31 +181,14 @@ export class PostgresFeeRepository
 
         try {
 
-            await client.query(
-                'BEGIN',
-            );
+            await client.query('BEGIN');
 
-            const existing =
-                await client.query(
-                    `
-          SELECT *
-          FROM payments
-          WHERE organization_id = $1
-            AND idempotency_key = $2
-          LIMIT 1
-          `,
-                    [
-                        data.organizationId,
-                        data.idempotencyKey,
-                    ],
-                );
+            const existing = await client.query(`SELECT * FROM payments WHERE organization_id = $1 AND idempotency_key = $2 LIMIT 1 `,
+                [data.organizationId, data.idempotencyKey,]);
 
-            if (
-                existing.rowCount
-            ) {
+            if (existing.rowCount) {
 
-                const row =
-                    existing.rows[0];
+                const row = existing.rows[0];
 
                 if (
                     row.enrollment_id !==
@@ -211,9 +203,7 @@ export class PostgresFeeRepository
                     );
                 }
 
-                await client.query(
-                    'COMMIT',
-                );
+                await client.query('COMMIT',);
 
                 return this.mapPayment(
                     row,
@@ -326,7 +316,9 @@ export class PostgresFeeRepository
                 );
 
             const payment =
-                paymentResult.rows[0];
+                this.mapPayment(
+                    paymentResult.rows[0],
+                );
 
             await client.query(
                 `
@@ -363,10 +355,46 @@ export class PostgresFeeRepository
                     null,
                 ],
             );
+            const event =
+                this.eventFactory.create({
 
-            await client.query(
-                'COMMIT',
-            );
+                    topic:
+                        INTEGRATION_TOPICS
+                            .FEE,
+
+                    eventType:
+                        INTEGRATION_EVENT_TYPES
+                            .PAYMENT_COLLECTED,
+
+                    aggregateType:
+                        'Enrollment',
+
+                    aggregateId:
+                        data.enrollmentId,
+
+                    organizationId:
+                        data.organizationId,
+
+                    branchId:
+                        data.branchId,
+
+                    actorUserId:
+                        data.collectedBy ??
+                        null,
+
+                    data: {
+
+                        paymentId:
+                            payment.id,
+
+                        enrollmentId:
+                            data.enrollmentId,
+                    },
+                });
+
+            await this.outbox.write(client, event);
+
+            await client.query('COMMIT',);
 
             return this.mapPayment(
                 payment,
@@ -591,6 +619,48 @@ export class PostgresFeeRepository
                     data.processedBy ??
                     null,
                 ],
+            );
+
+            const event =
+                this.eventFactory.create({
+
+                    topic:
+                        INTEGRATION_TOPICS
+                            .FEE,
+
+                    eventType:
+                        INTEGRATION_EVENT_TYPES
+                            .PAYMENT_REFUNDED,
+
+                    aggregateType:
+                        'Payment',
+
+                    aggregateId:
+                        data.paymentId,
+
+                    organizationId:
+                        data.organizationId,
+
+                    branchId:
+                        data.branchId,
+
+                    actorUserId:
+                        data.processedBy ??
+                        null,
+
+                    data: {
+
+                        paymentId:
+                            data.paymentId,
+
+                        refundId:
+                            refund.id,
+                    },
+                });
+
+            await this.outbox.write(
+                client,
+                event,
             );
 
             await client.query(

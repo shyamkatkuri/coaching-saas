@@ -39,6 +39,7 @@ import { StudentLookupService } from './application/student-lookup.service';
     ],
 
     exports: [
+        StudentApplicationService,
         StudentLookupService
     ],
 })

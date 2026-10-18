@@ -103,5 +103,10 @@ import {
                 PostgresFeeRepository,
         },
     ],
+    exports: [
+        EnrollmentApplicationService,
+        AttendanceApplicationService,
+        FeeApplicationService,
+    ],
 })
 export class EnrollmentModule { }

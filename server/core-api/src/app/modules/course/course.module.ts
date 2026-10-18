@@ -44,6 +44,7 @@ import {
 
     exports: [
         CourseLookupService,
+        CourseApplicationService,
     ],
 })
 export class CourseModule { }

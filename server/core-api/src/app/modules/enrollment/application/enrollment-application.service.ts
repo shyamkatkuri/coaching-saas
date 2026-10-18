@@ -27,6 +27,10 @@ import type {
 } from '../presentation/dto/create-enrollment.dto';
 import { DistributedLockService } from '../../../core/redis/lock/distributed-lock.service';
 import { CacheKeyFactory } from '../../../core/redis/cache/cache-key.factory';
+import { RealtimePublisherService } from '../../../realtime/realtime-publisher.service';
+import { REALTIME_EVENTS, } from '@coaching/contracts';
+
+
 
 @Injectable()
 export class EnrollmentApplicationService {
@@ -49,6 +53,9 @@ export class EnrollmentApplicationService {
 
         private readonly cacheKeys:
             CacheKeyFactory,
+
+        private readonly realtime:
+            RealtimePublisherService,
     ) { }
 
     async create(
@@ -133,32 +140,53 @@ export class EnrollmentApplicationService {
 
                     try {
 
-                        return await this
-                            .enrollments
-                            .create({
+                        const enrollment =
+                            await this.enrollments
+                                .create({
+                                    organizationId,
+                                    branchId,
+
+                                    studentId:
+                                        dto.studentId,
+
+                                    courseId:
+                                        batch.courseId,
+
+                                    batchId:
+                                        batch.id,
+
+                                    grossFee:
+                                        dto.grossFee,
+
+                                    discountAmount:
+                                        dto.discountAmount ??
+                                        0,
+
+                                    createdBy:
+                                        applicationUserId,
+                                });
+
+                        this.realtime
+                            .emitToBranch(
                                 organizationId,
                                 branchId,
 
-                                studentId:
-                                    dto.studentId,
+                                REALTIME_EVENTS
+                                    .ENROLLMENT_CREATED,
 
-                                courseId:
-                                    batch.courseId,
+                                {
+                                    enrollmentId:
+                                        enrollment.id,
 
-                                batchId:
-                                    batch.id,
+                                    studentId:
+                                        enrollment.studentId,
 
-                                grossFee:
-                                    dto.grossFee,
+                                    batchId:
+                                        enrollment.batchId,
+                                },
+                            );
 
-                                discountAmount:
-                                    dto
-                                        .discountAmount ??
-                                    0,
-
-                                createdBy:
-                                    applicationUserId,
-                            });
+                        return enrollment;
 
                     } catch (
                     error: any

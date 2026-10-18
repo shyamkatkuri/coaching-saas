@@ -43,4 +43,16 @@ export class CourseLookupService {
             );
         }
     }
+
+    findMany(
+        organizationId: string,
+        courseIds: string[],
+    ) {
+
+        return this.courses
+            .findByIds(
+                organizationId,
+                courseIds,
+            );
+    }
 }

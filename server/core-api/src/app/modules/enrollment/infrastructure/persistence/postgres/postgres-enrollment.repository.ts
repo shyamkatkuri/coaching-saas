@@ -21,7 +21,12 @@ import type {
 import {
     randomUUID,
 } from 'node:crypto';
-
+import { OutboxWriterService } from '../../../../../core/messaging/outbox/outbox-writer.service';
+import { OutboxEventFactory } from '../../../../../core/messaging/outbox/outbox-event.factory';
+import {
+    INTEGRATION_EVENT_TYPES,
+    INTEGRATION_TOPICS,
+} from '@coaching/contracts';
 
 @Injectable()
 export class PostgresEnrollmentRepository
@@ -30,6 +35,12 @@ export class PostgresEnrollmentRepository
     constructor(
         private readonly databases:
             DatabaseRegistryService,
+
+        private readonly outbox:
+            OutboxWriterService,
+
+        private readonly eventFactory:
+            OutboxEventFactory,
     ) { }
 
     private get db() {
@@ -351,13 +362,54 @@ ORDER BY enrollment_date DESC;
                 );
             }
 
-            await client.query(
-                'COMMIT',
-            );
+            const integrationEvent =
+                this.eventFactory.create({
 
-            return this.mapRow(
-                enrollment,
-            );
+                    topic:
+                        INTEGRATION_TOPICS
+                            .ENROLLMENT,
+
+                    eventType:
+                        INTEGRATION_EVENT_TYPES
+                            .ENROLLMENT_CREATED,
+
+                    aggregateType:
+                        'Enrollment',
+
+                    aggregateId:
+                        enrollment.id,
+
+                    organizationId:
+                        enrollment.organizationId,
+
+                    branchId:
+                        enrollment.branchId,
+
+                    actorUserId:
+                        data.createdBy ??
+                        null,
+
+                    data: {
+
+                        enrollmentId:
+                            enrollment.id,
+
+                        studentId:
+                            enrollment.studentId,
+
+                        courseId:
+                            enrollment.courseId,
+
+                        batchId:
+                            enrollment.batchId,
+                    },
+                });
+
+            await this.outbox.write(client, integrationEvent,);
+
+            await client.query('COMMIT',);
+
+            return this.mapRow(enrollment);
 
         } catch (error) {
 
@@ -379,9 +431,54 @@ ORDER BY enrollment_date DESC;
         enrollmentId: string,
     ): Promise<Enrollment | null> {
 
-        const result =
-            await this.db.query(
-                `
+        //     const result =
+        //         await this.db.query(
+        //             `
+        //   UPDATE enrollments
+
+        //   SET
+        //     status =
+        //       'CANCELLED',
+
+        //     updated_at =
+        //       NOW()
+
+        //   WHERE id = $1
+        //     AND organization_id = $2
+        //     AND branch_id = $3
+        //     AND status = 'ACTIVE'
+
+        //   RETURNING *
+        //   `,
+        //             [
+        //                 enrollmentId,
+        //                 organizationId,
+        //                 branchId,
+        //             ],
+        //         );
+
+        //     if (
+        //         result.rowCount === 0
+        //     ) {
+        //         return null;
+        //     }
+
+        //     return this.mapRow(
+        //         result.rows[0],
+        //     );
+
+        const client =
+            await this.db.connect();
+
+        try {
+
+            await client.query(
+                'BEGIN',
+            );
+
+            const result =
+                await client.query(
+                    `
       UPDATE enrollments
 
       SET
@@ -398,22 +495,85 @@ ORDER BY enrollment_date DESC;
 
       RETURNING *
       `,
-                [
-                    enrollmentId,
+                    [
+                        enrollmentId,
+                        organizationId,
+                        branchId,
+                    ],
+                );
+
+            if (
+                result.rowCount === 0
+            ) {
+
+                await client.query('ROLLBACK');
+
+                return null;
+            }
+
+            const enrollment =
+                this.mapRow(
+                    result.rows[0],
+                );
+
+            const event =
+                this.eventFactory.create({
+
+                    topic:
+                        INTEGRATION_TOPICS
+                            .ENROLLMENT,
+
+                    eventType:
+                        INTEGRATION_EVENT_TYPES
+                            .ENROLLMENT_CANCELLED,
+
+                    aggregateType:
+                        'Enrollment',
+
+                    aggregateId:
+                        enrollment.id,
+
                     organizationId,
+
                     branchId,
-                ],
+
+                    data: {
+
+                        enrollmentId:
+                            enrollment.id,
+
+                        studentId:
+                            enrollment.studentId,
+
+                        batchId:
+                            enrollment.batchId,
+                    },
+                });
+
+            await this.outbox.write(
+                client,
+                event,
             );
 
-        if (
-            result.rowCount === 0
-        ) {
-            return null;
+            await client.query(
+                'COMMIT',
+            );
+
+            return enrollment;
+
+        } catch (error) {
+
+            await client.query(
+                'ROLLBACK',
+            );
+
+            throw error;
+
+        } finally {
+
+            client.release();
         }
 
-        return this.mapRow(
-            result.rows[0],
-        );
     }
 
     private mapRow(

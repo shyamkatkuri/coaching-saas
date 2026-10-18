@@ -52,4 +52,19 @@ export class BatchLookupService {
 
         return batch;
     }
+
+    findMany(
+        organizationId: string,
+        branchId: string,
+        batchIds: string[],
+    ) {
+
+        return this.batches
+            .findByIds(
+                organizationId,
+                branchId,
+                batchIds,
+            );
+    }
+
 }

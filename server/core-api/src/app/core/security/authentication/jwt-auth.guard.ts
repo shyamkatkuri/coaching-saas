@@ -24,6 +24,7 @@ import {
 import {
     IS_PUBLIC_KEY,
 } from './public.decorator';
+import { getExecutionRequest } from '../execution-request.util';
 
 export type AuthenticatedRequest =
     Request & {
@@ -61,12 +62,7 @@ export class JwtAuthGuard
             return true;
         }
 
-        const request =
-            context
-                .switchToHttp()
-                .getRequest<
-                    AuthenticatedRequest
-                >();
+        const request = getExecutionRequest(context);
 
         const authorization =
             request.headers

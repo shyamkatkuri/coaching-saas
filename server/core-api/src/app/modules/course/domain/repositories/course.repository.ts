@@ -46,4 +46,9 @@ export interface CourseRepository {
         courseId: string,
         data: UpdateCourseData,
     ): Promise<Course | null>;
+
+    findByIds(
+        organizationId: string,
+        courseIds: string[],
+    ): Promise<Course[]>;
 }

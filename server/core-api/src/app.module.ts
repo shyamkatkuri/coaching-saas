@@ -16,6 +16,9 @@ import { TrainerModule } from './app/modules/trainer/trainer.module';
 import { CourseModule } from './app/modules/course/course.module';
 import { EnrollmentModule } from './app/modules/enrollment/enrollment.module';
 import { RedisModule } from './app/core/redis/redis.module';
+import { AppGraphqlModule } from './app/graphql/app-graphql.module';
+import { RealtimeModule } from './app/realtime/realtime.module';
+import { MessagingModule } from './app/core/messaging/messaging.module';
 
 
 @Module({
@@ -55,9 +58,20 @@ import { RedisModule } from './app/core/redis/redis.module';
         REDIS_DEFAULT_CACHE_TTL_SECONDS: Joi.number().integer().positive().default(60),
         REDIS_LOCK_TTL_MS: Joi.number().integer().positive().default(10000),
         REDIS_LOCK_WAIT_MS: Joi.number().integer().positive().default(3000),
+
+        WS_ALLOWED_ORIGINS: Joi.string().required(),
+
+        KAFKA_BROKERS: Joi.string().required(),
+        KAFKA_CLIENT_ID: Joi.string().required(),
+        OUTBOX_BATCH_SIZE: Joi.number().integer().positive().default(50),
+        OUTBOX_POLL_INTERVAL_MS: Joi.number().integer().positive().default(1000),
+        OUTBOX_MAX_ATTEMPTS: Joi.number().integer().positive().default(20),
+        OUTBOX_PROCESSING_TIMEOUT_SECONDS: Joi.number().integer().positive().default(60),
+
       }),
     }),
     RedisModule,
+    MessagingModule,
     CoreModule,
     DatabaseModule,
     HealthModule,
@@ -67,7 +81,9 @@ import { RedisModule } from './app/core/redis/redis.module';
     CourseModule,
     TrainerModule,
     BatchModule,
-    EnrollmentModule
+    EnrollmentModule,
+    AppGraphqlModule,
+    RealtimeModule
   ],
   controllers: [],
   providers: []

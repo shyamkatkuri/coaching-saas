@@ -103,38 +103,22 @@ export class AuthService {
 
     async getValidAccessToken():
         Promise<string | null> {
-        if (
-            !keycloak.authenticated
-        ) {
-            return null;
-        }
-
-        try {
-            /*
-             * Refresh when the token
-             * has less than 30 seconds
-             * remaining.
-             */
-            await keycloak.updateToken(
+        await keycloak
+            .updateToken(
                 30,
             );
 
-            return keycloak.token ??
-                null;
-        } catch (error) {
-            console.error(
-                'Token refresh failed',
-                error,
+        const token =
+            keycloak.token;
+
+        if (!token) {
+
+            throw new Error(
+                'Access token unavailable',
             );
-
-            this.authenticatedState.set(
-                false,
-            );
-
-            await this.login();
-
-            return null;
         }
+
+        return token;
     }
 
     getAccessToken():

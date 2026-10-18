@@ -240,4 +240,46 @@ export class PostgresCourseRepository
                 row.updated_at,
         };
     }
+
+    async findByIds(
+        organizationId: string,
+        courseIds: string[],
+    ): Promise<Course[]> {
+
+        if (
+            courseIds.length === 0
+        ) {
+            return [];
+        }
+
+        const result =
+            await this.db.query(
+                `
+      SELECT
+        id,
+        organization_id,
+        name,
+        code,
+        description,
+        status,
+        created_at,
+        updated_at
+
+      FROM courses
+
+      WHERE organization_id = $1
+        AND id =
+          ANY($2::uuid[])
+      `,
+                [
+                    organizationId,
+                    courseIds,
+                ],
+            );
+
+        return result.rows.map(
+            row =>
+                this.mapRow(row),
+        );
+    }
 }

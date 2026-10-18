@@ -6,6 +6,8 @@ import type { EnrollmentRepository, } from "../domain/repositories/enrollment.re
 import { BatchLookupService } from "../../batch/application/batch-lookup.service";
 import { CreateAttendanceSessionDto } from "../presentation/dto/create-attendance-session.dto";
 import { MarkAttendanceDto } from "../presentation/dto/mark-attendance.dto";
+import { REALTIME_EVENTS, } from '@coaching/contracts';
+import { RealtimePublisherService } from '../../../realtime/realtime-publisher.service';
 
 @Injectable()
 export class AttendanceApplicationService {
@@ -25,6 +27,9 @@ export class AttendanceApplicationService {
 
         private readonly batches:
             BatchLookupService,
+
+        private readonly realtime:
+            RealtimePublisherService,
     ) { }
 
     async createSession(
@@ -96,7 +101,7 @@ export class AttendanceApplicationService {
             );
         }
 
-        return this.attendance.mark({
+        const record = await this.attendance.mark({
             organizationId,
             branchId,
 
@@ -117,6 +122,27 @@ export class AttendanceApplicationService {
             markedBy:
                 applicationUserId,
         });
+
+        this.realtime
+            .emitToBranch(
+                organizationId,
+                branchId,
+
+                REALTIME_EVENTS
+                    .ATTENDANCE_MARKED,
+
+                {
+                    sessionId,
+
+                    enrollmentId:
+                        enrollment.id,
+
+                    studentId:
+                        enrollment.studentId,
+                },
+            );
+
+        return record;
     }
 
     async getRecords(

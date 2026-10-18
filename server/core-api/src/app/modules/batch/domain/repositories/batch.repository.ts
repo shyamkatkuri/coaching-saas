@@ -71,4 +71,10 @@ export interface BatchRepository {
         batchId: string,
         data: UpdateBatchData,
     ): Promise<Batch | null>;
+
+    findByIds(
+        organizationId: string,
+        branchId: string,
+        batchIds: string[],
+    ): Promise<Batch[]>;
 }
